@@ -38,4 +38,5 @@ Never commit your actual bot tokens or Gmail secrets.
 
 <img width="1919" height="880" alt="image" src="https://github.com/user-attachments/assets/e8732922-f6ed-4672-a58d-7e64ab05ded9" />
 
+![n8ngif](https://github.com/user-attachments/assets/4d9d08ba-f24d-4ae3-8b07-1627030b2129)
 
