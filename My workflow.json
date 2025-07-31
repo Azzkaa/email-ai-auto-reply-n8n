@@ -1,0 +1,320 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        80
+      ],
+      "id": "0916c831-5f5a-4421-aac2-4911d3c99502",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "B4haUce8SNzAwy1t",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here's the user's email: {{ $json.snippet }}",
+        "options": {
+          "systemMessage": "You are a helpful email assistant to Azka Aftab and your job is to reply to user's emails in a friendly and professional tone. If the user is asking to book an appointment, be sure to check my calendar. If the user's email is in another language, please translate it to English. You want to write the emails as Azka."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "7f3ec936-f1e8-4a8b-b29e-7bdd673dcb6a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": -1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        64,
+        240
+      ],
+      "id": "4d15d908-8a3a-434b-91b5-c45370c1b6e2",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "HjXcK4SYDtxw6h5l",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        240
+      ],
+      "id": "5ba16371-ae08-4b2b-bd82-0ca81ebe44b7",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "azka.aftab25@gmail.com",
+          "mode": "list",
+          "cachedResultName": "azka.aftab25@gmail.com"
+        },
+        "limit": 10,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        240
+      ],
+      "id": "93f77ed5-0cb6-47a2-845b-7aea7ca01ab3",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "DQh1V0mhcT0rSzhD",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        240
+      ],
+      "id": "524341e5-b2c1-4272-a9a1-22cbe98cce1d",
+      "name": "Get many messages in Gmail",
+      "webhookId": "f78e1835-ba7a-4e3e-ba84-52db5d53a833",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "B4haUce8SNzAwy1t",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "8088138122",
+        "message": "=Email sender: {{ $('Gmail Trigger').item.json.From }}\nEmail content: {{ $('Gmail Trigger').item.json.snippet }}\nAI Email Reply: {{ $json.output }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "49e89aee-607d-495b-bafe-93adb711fc3c",
+      "name": "Send a text message",
+      "webhookId": "b4cff3a9-8831-4804-bc61-38b91aee0699",
+      "alwaysOutputData": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "oWuNdFKbTvFM9EYF",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f762f672-7756-44e7-8854-5644b0148e4a",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "a103421a-25df-4504-b2e2-550d065b762b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $('AI Agent').item.json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        976,
+        -90.5
+      ],
+      "id": "5add4ba1-5e6c-4eef-b954-297c2d4f0a4d",
+      "name": "Reply to a message",
+      "webhookId": "f41e6a70-9267-41d9-a38b-812c05acccb8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "B4haUce8SNzAwy1t",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7b815173-92c1-43aa-8890-6980f1149e01",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c48b01aa3497e2ff273c6fc32e36a1b6f3e1ddf70ecb86f3bdfd24741c51e856"
+  },
+  "id": "9P5b8p2ASpCdN5Nf",
+  "tags": []
+}
